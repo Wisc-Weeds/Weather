@@ -29,14 +29,20 @@ arlington_prcp= arlington %>%
   select(site, tile, year, yday, measurement, value) %>%
   filter(measurement == "prcp..mm.day.")
 
+arlington_tmin= arlington %>%
+  select(site, tile, year, yday, measurement, value) %>%
+  filter(measurement == "tmin..deg.c.")
+
+arlington_tmax= arlington %>%
+  select(site, tile, year, yday, measurement, value) %>%
+  filter(measurement == "tmax..deg.c.")
+
 arlington_temp= arlington$measurement %>%
-  mutate(tmean = (tmax..deg.c. + tmin..deg.c.)/2,
-        date = as.Date(paste(year, yday, sep = "-"), "%Y-%j"))
+  mutate(tmean = (arlington_tmax$measurement + arlington_tmin$measurement)/2)
 ```
 
 ```{r}
-arlington$data<- arlington$data %>%
-  mutate(tmean = (tmax..deg.c. + tmin..deg.c.)/2,
+,
         date = as.Date(paste(year, yday, sep = "-"), "%Y-%j"))
 ```
 
