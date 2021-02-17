@@ -6,12 +6,154 @@ output: pdf_document
 ---
 
 ```{r setup}
+#library(easypackages)
+#libraries('tidyverse') # Data wrangling
+#libraries('lubridate') # Dates operations
+#libraries('kableExtra') # Table formatting
+#libraries('daymetr','chirps','nasapower') # Weather databases
+#libraries('vegan') # Shannon Diversity Index
+library(lubridate)
+library(kableExtra)
 library(daymetr)
 library(tidyverse)
 library(dplyr)
 ```
 
 
+```{r}
+# Coordinates of each site (site names must be unique)
+# Each site is a row
+# Date for each site in columns
+df.site <- data.frame(ID = c('1','2','3'),
+                      Crop = c('Corn/Soy','Corn/Soy','Corn/Soy'),
+                      Site = c('Arlington','Lancaster','Rock County'),
+                      # Both coordinates in decimal format
+                      latitude = c( 43.3091,42.8283,42.7255),
+                      longitude = c(-89.3473,-90.7908,-89.0228))
+
+# Specify key dates. Typically, dates relate to phenological stages
+# Each date must be a column
+#df.time <- data.frame(ID = c('1','2','3'),
+                      # Dates as YYYY_MM_DD, using "_" to separate
+                      #Start = c('1988_01_01','1988_01_01','1988_01_01'),
+                      #Flo = c('2002_07_15','2006_04_15','2010_07_05'),
+                      #SeFi =c('2002_08_15','2006_05_01','2010_08_15'),
+                      #End = c('2018_12_31','2018_12_31','2018_12_31'))
+
+# For historical data
+df.historical <- data.frame(ID = c('1','2','3'),
+                      # Dates as YYYY_MM_DD, using "_" to separate
+                      Start = c('1988_01_01','1988_01_01','1988_01_01'),
+                      End = c('2018_12_31','2018_12_31','2018_12_31'))
+
+# Merging sites and dates
+
+# Seasonal
+#df.input <- df.site %>% left_join(df.time)
+
+# Historical
+df.historical <- df.site %>% left_join(df.historical)
+
+
+path = paste0(getwd(), '/') # Current directory or any path.
+# Place your file in the current working directory (getwd)
+
+# Input seasonal data
+file_input = paste0(path, '30YRNormalWeather_WiscWeeds.csv')
+
+df.input <- read.table(file_input, sep=',', header = TRUE) %>% 
+  mutate_at(vars(6:ncol(.)), ~as.Date(., format='%Y_%m_%d'))
+```
+
+
+# DAYMET function
+
+Here we download the daily-weather data from the DAYMET database, and we process it to obtain common variables of agronomic value.
+
+```{r}
+
+# Function
+weather.daymet <- function(input, dpp=0){ input %>%
+  mutate(Weather = pmap(list(ID = ID,
+                             lat = latitude,
+                             lon = longitude,
+                             sta = Start - dpp,
+                             end = End),
+                        
+        # Retrieving daymet data
+        function(ID,lat,lon,sta,end){
+                download_daymet(site = ID,
+                                lat = lat, lon = lon,
+                                # Extracting year
+                                start = as.numeric(substr(sta,1,4)),
+                                end = as.numeric(substr(end,1,4)),
+                                internal = T, simplify = T)})) %>% 
+  
+  mutate(Weather = Weather %>% 
+           
+           map(~mutate(.,
+                       Date = as.Date(as.numeric(yday)-1, # Day of the year
+                                         origin = paste0(year,'-01-01')),
+                       Year = year(Date),
+                       Month = month(Date),
+                       Day = mday(Date)))  %>% 
+           
+           map(~dplyr::select(., yday, Year, Month, Day, Date,
+                              measurement,value)) %>% 
+           map(~spread(., 'measurement','value'))  %>% 
+           map(~rename_all(., ~c("DOY", # Date as Day of the year
+                                 "Year", # Year
+                                 "Month", # Month 
+                                 "Day", # Day of the month
+                                 "Date", # Date as normal format
+                                 "DL", # Day length (sec)
+                                 "PP", # Precipitation (mm)
+                                 "Rad", # Radiation (W/m2)
+                                 "SWE", # Snow water (kg/m2)
+                                 "Tmax", # Max. temp. (degC)
+                                 "Tmin", # Min. temp. (degC)
+                                 "VPD"))))  %>% # Vap Pres Def (Pa)
+  
+  mutate(Weather = pmap(list(sta=Start-dpp,
+                             end = End,data=Weather), # Requested period
+                        #~filter(..3, Date>=..1 & Date<= ..2))) %>% unnest() %>%
+                        function(sta, end, data){
+                          filter(data, Date >= sta & Date <= end) 
+                        } )) %>% unnest(cols = c(Weather)) %>% 
+  
+  # Converting units or adding variables
+  mutate(Rad = Rad*0.000001*DL, # Radiation (W/m2 to MJ/m2)
+         Tmean = (Tmax+Tmin)/2, # Mean temperature (degC),
+         VPD = VPD / 1000, # VPD (Pa to kPa),
+         # Data for ET0
+         lat_rad = latitude*0.0174533,
+         dr = 1 + 0.033*cos((2*pi/365)*DOY),
+         Sd = 0.409*sin((2*pi/365)*DOY - 1.39),
+         ws = acos(-tan(lat_rad)*tan(Sd)),
+         Ra = (24*60)/(pi) * Gsc * dr * (ws*sin(lat_rad)*sin(Sd)+
+                                  cos(lat_rad)*sin(ws)),
+         ET0_HS = 0.0135 * kRs * (Ra / 2.45) * (sqrt(Tmax-Tmin)) * (Tmean + 17.8),
+         DL = (DL/60)/60 # Day length (hours)
+          ) %>% dplyr::select(-lat_rad,-dr,-Sd,-ws,-Ra)
+}
+```
+
+### Run "weather.daymet"
+```{r}
+# Specify input = dataframe containing sites-data 
+# Specify Days prior planting. Default is dpp = 0. Here we use dpp = 30.
+
+weather.daymet(input = df.input, dpp = 30) -> df.weather.daymet
+
+# Exporting data as a .csv file
+write.csv(df.weather.daymet, row.names = F, na='',
+          file = paste0(path, 'Output_daymet.csv'))
+
+#View(df.weather.daymet)
+```
+
+
+### Kolby's Solo Attempt
 ```{r data}
 arlington<-download_daymet(site= "arlington",
                 lat = 43.3091, #The N-S latitude value
@@ -44,10 +186,10 @@ arlington_tavg= arlington %>%
   left_join(arlington_tmax, by = c("site", "tile", "year", "yday")) %>%
   mutate(tmean = (value + tmaxc)/2)
 
+
 ```
 
 
 ```{r}
 
 ```
-
