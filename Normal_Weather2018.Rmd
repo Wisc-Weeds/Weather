@@ -11,11 +11,12 @@ library(tidyverse)
 library(dplyr)
 ```
 
+
 ```{r data}
 arlington<-download_daymet(site= "arlington",
-                lat = 43.309143, #The N-S latitude value
-                lon = -89.347368, #The E-W longitude value
-                start = 1989,#Start of the range of years
+                lat = 43.3091, #The N-S latitude value
+                lon = -89.3473, #The E-W longitude value
+                start = 1988,#Start of the range of years
                 end = 2018,#end of the range of years
                 path = ,#Path for where to save the data; default is NULL
                 internal = TRUE,
@@ -24,25 +25,29 @@ arlington<-download_daymet(site= "arlington",
 str(arlington)
 ```
 
-```{r}
+
+```{r data wrangling}
 arlington_prcp= arlington %>%
   select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "prcp..mm.day.")
-
-arlington_tmin= arlington %>%
-  select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "tmin..deg.c.")
+  filter(measurement == "prcp..mm.day.") #%>%
+  ##mutate(month)
 
 arlington_tmax= arlington %>%
   select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "tmax..deg.c.")
+  filter(measurement == "tmax..deg.c.") %>%
+  rename( c("tmax" = "measurement", "tmaxc" = "value"))
+ 
 
-arlington_temp= arlington$measurement %>%
-  mutate(tmean = (arlington_tmax$measurement + arlington_tmin$measurement)/2)
+arlington_tavg= arlington %>%
+  select(site, tile, year, yday, measurement, value) %>%
+  filter(measurement == "tmin..deg.c.") %>%
+  left_join(arlington_tmax, by = c("site", "tile", "year", "yday")) %>%
+  mutate(tmean = (value + tmaxc)/2)
+
 ```
 
+
 ```{r}
-,
-        date = as.Date(paste(year, yday, sep = "-"), "%Y-%j"))
+
 ```
 
