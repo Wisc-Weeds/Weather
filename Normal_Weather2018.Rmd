@@ -1,0 +1,42 @@
+---
+title: "30 Year Normal Weather"
+author: "Kolby Grint"
+date: "2/16/2021"
+output: pdf_document
+---
+
+```{r setup}
+library(daymetr)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r data}
+arlington<-download_daymet(site= "arlington",
+                lat = 43.309143, #The N-S latitude value
+                lon = -89.347368, #The E-W longitude value
+                start = 1989,#Start of the range of years
+                end = 2018,#end of the range of years
+                path = ,#Path for where to save the data; default is NULL
+                internal = TRUE,
+                simplify = TRUE)
+
+str(arlington)
+```
+
+```{r}
+arlington_prcp= arlington %>%
+  select(site, tile, year, yday, measurement, value) %>%
+  filter(measurement == "prcp..mm.day.")
+
+arlington_temp= arlington$measurement %>%
+  mutate(tmean = (tmax..deg.c. + tmin..deg.c.)/2,
+        date = as.Date(paste(year, yday, sep = "-"), "%Y-%j"))
+```
+
+```{r}
+arlington$data<- arlington$data %>%
+  mutate(tmean = (tmax..deg.c. + tmin..deg.c.)/2,
+        date = as.Date(paste(year, yday, sep = "-"), "%Y-%j"))
+```
+
