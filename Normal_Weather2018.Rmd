@@ -5,18 +5,16 @@ date: "2/16/2021"
 output: pdf_document
 ---
 
-```{r setup}
-#library(easypackages)
-#libraries('tidyverse') # Data wrangling
-#libraries('lubridate') # Dates operations
-#libraries('kableExtra') # Table formatting
-#libraries('daymetr','chirps','nasapower') # Weather databases
-#libraries('vegan') # Shannon Diversity Index
-library(lubridate)
-library(kableExtra)
-library(daymetr)
-library(tidyverse)
-library(dplyr)
+## Loading packages
+
+```{r}
+library(easypackages)
+libraries('tidyverse') # Data wrangling
+libraries('lubridate') # Dates operations
+libraries('kableExtra') # Table formatting
+libraries('daymetr','chirps','nasapower') # Weather databases
+libraries('vegan') # Shannon Diversity Index
+
 ```
 
 
@@ -33,12 +31,12 @@ df.site <- data.frame(ID = c('1','2','3'),
 
 # Specify key dates. Typically, dates relate to phenological stages
 # Each date must be a column
-#df.time <- data.frame(ID = c('1','2','3'),
+df.time <- data.frame(ID = c('1','2','3'),
                       # Dates as YYYY_MM_DD, using "_" to separate
-                      #Start = c('1988_01_01','1988_01_01','1988_01_01'),
+                      Start = c('1988_01_01','1988_01_01','1988_01_01'),
                       #Flo = c('2002_07_15','2006_04_15','2010_07_05'),
                       #SeFi =c('2002_08_15','2006_05_01','2010_08_15'),
-                      #End = c('2018_12_31','2018_12_31','2018_12_31'))
+                      End = c('2018_12_31','2018_12_31','2018_12_31'))
 
 # For historical data
 df.historical <- data.frame(ID = c('1','2','3'),
@@ -49,24 +47,73 @@ df.historical <- data.frame(ID = c('1','2','3'),
 # Merging sites and dates
 
 # Seasonal
-#df.input <- df.site %>% left_join(df.time)
+df.input <- df.site %>% left_join(df.time)
 
 # Historical
 df.historical <- df.site %>% left_join(df.historical)
 
+```
 
+### Creating a `.csv` template
+
+Here we export the example tables to "csv" format to use as templates
+
+```{r}
+write.csv(df.input, 'Example_input.csv', row.names = F, na='')
+write.csv(df.historical, 'Example_input_historical.csv', row.names = F, na='')
+```
+
+### Importing a `.csv` files
+
+Here we import your table from the csv file, and show how input tables should look like right after importing:
+
+#### Seasonal
+```{r}
 path = paste0(getwd(), '/') # Current directory or any path.
 # Place your file in the current working directory (getwd)
 
 # Input seasonal data
-file_input = paste0(path, '30YRNormalWeather_WiscWeeds.csv')
+file_input = paste0(path, 'Example_input.csv') # Change to your file
 
+# Open seasonal file
 df.input <- read.table(file_input, sep=',', header = TRUE) %>% 
   mutate_at(vars(6:ncol(.)), ~as.Date(., format='%Y_%m_%d'))
+
+# View Seasonal
+kable(df.input) %>% 
+  kable_styling(latex_options = c("striped"), position = "center", font_size = 10)
+
+
 ```
 
+#### Historical
+```{r}
+path = paste0(getwd(), '/') # Current directory or any path.
+# Place your file in the current working directory (getwd)
 
-# DAYMET function
+# Input historical data
+file_historical = paste0(path, 'Example_input_historical.csv') # Change to your file
+
+# Open historical file
+df.historical <- read.table(file_historical, sep=',', header = TRUE) %>% 
+  mutate_at(vars(6:ncol(.)), ~as.Date(., format='%Y_%m_%d'))
+
+# View Historical
+kable(df.historical) %>% 
+  kable_styling(latex_options = c("striped"), position = "center", font_size = 10)
+
+```
+
+```{r}
+# Constants for ET0 (Cobaner et al., 2017)
+# Solar constant
+Gsc = 0.0820 # (MJ m-2 min-1)
+# Radiation adjustment coefficient (Samani, 2004)
+kRs = 0.17
+
+```
+
+## DAYMET function
 
 Here we download the daily-weather data from the DAYMET database, and we process it to obtain common variables of agronomic value.
 
@@ -146,14 +193,34 @@ weather.daymet <- function(input, dpp=0){ input %>%
 weather.daymet(input = df.input, dpp = 30) -> df.weather.daymet
 
 # Exporting data as a .csv file
-write.csv(df.weather.daymet, row.names = F, na='',
-          file = paste0(path, 'Output_daymet.csv'))
+#write.csv(df.weather.daymet, row.names = F, na='',
+          #file = paste0(path, 'Output_daymet.csv'))
 
 #View(df.weather.daymet)
 ```
+I think the weather data starts one month early? Filtered it out.
+
+### Kolby's Wrangling of Daymet Data
+```{r Wrangling Daymet Data}
+df.weather.daymet %>%
+  filter(!Year == "1987")
+
+arlweather <- df.weather.daymet %>%
+  filter(Site == "Arlington") 
+  
+
+#average monthly precipitation and temperature
+arlweather_monthly <- arlweather %>%
+  group_by(Month) %>%
+  summarise(prcp_mm0 = sum(PP), temp_C = mean(Tmean))
+  #monthly precipitation is wrong. need to think more about how to do this with a fresh mind.
+
+```
+I can't get the monthly precipitation to work how I want it to, it is way too high. Should be closer in the realm of ~100mm/month not 1000-4000mm/month.
 
 
-### Kolby's Solo Attempt
+
+### Kolby's Solo Attempt Ignore for now and probably delete.
 ```{r data}
 arlington<-download_daymet(site= "arlington",
                 lat = 43.3091, #The N-S latitude value
@@ -186,9 +253,9 @@ arlington_tavg= arlington %>%
   left_join(arlington_tmax, by = c("site", "tile", "year", "yday")) %>%
   mutate(tmean = (value + tmaxc)/2)
 
-
+#Probably would have worked but Couldn't 
 ```
-
+Probably would have worked but Couldn't figure out how to get months assigned with only "day of year". Ultimately was trying to develop monthly normal data.
 
 ```{r}
 
