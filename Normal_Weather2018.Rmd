@@ -212,7 +212,7 @@ arlweather <- df.weather.daymet %>%
 #average monthly precipitation and temperature
 arlweather_monthly <- arlweather %>%
   group_by(Month) %>%
-  summarise(prcp_mm0 = sum(PP), temp_C = mean(Tmean))
+  summarise(prcp_mm0 = sum(PP)/30 , temp_C = mean(Tmean))
   #monthly precipitation is wrong. need to think more about how to do this with a fresh mind.
 
 ```
