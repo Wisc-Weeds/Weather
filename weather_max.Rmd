@@ -141,10 +141,9 @@ weather_daymet <- function(input, dpp = 0){
 
 
 ```{r get_data}
-# df_site gets the historial data - if you use df_time you get data from the crop season
 #dpp default = 0 - dpp = days prior start date
 
-df_daymet <- weather_daymet(input = df_site, dpp = 0) 
+df_daymet <- weather_daymet(input = df_time, dpp = 0) 
 ```
 
 ```{r}
@@ -152,9 +151,7 @@ df_daymet <- weather_daymet(input = df_site, dpp = 0)
 # There are many ways you can retrieve the data from it. Below just an simple plot
 df_daymet %>% 
   mutate(Month = as_factor(Month)) %>% 
-  ggplot(aes(x = Year)) +
-  geom_jitter(aes(y = Tmax), alpha = 0.01, color = "red") +
-  geom_jitter(aes(y = Tmin), alpha = 0.01, color = "blue") +
+  ggplot(aes(x = DOY)) +
   geom_smooth(aes(y = Tmax), method = "loess", color = "red") +
   geom_smooth(aes(y = Tmin), method = "loess", color = "blue") +
   facet_grid(~ Site) 
@@ -230,18 +227,15 @@ weather_nasapower <- function(input, dpp = 0){
 
 
 ```{r}
-# data_site gets the historial data - if you use data_time you get data from the crop season
 #dpp default = 0 - dpp = days prior start date
 
-df_nasapower <- weather_nasapower(input = df_site, dpp = 0)
+df_nasapower <- weather_nasapower(input = df_time, dpp = 0)
 ```
 
 ```{r}
 df_nasapower %>% 
   mutate(Month = as_factor(Month)) %>% 
-  ggplot(aes(x = Year,)) +
-  geom_jitter(aes(y = Tmax), alpha = 0.01, color = "red") +
-  geom_jitter(aes(y = Tmin), alpha = 0.01, color = "blue") +
+  ggplot(aes(x = DOY)) +
   geom_smooth(aes(y = Tmax), method = "loess", color = "red") +
   geom_smooth(aes(y = Tmin), method = "loess", color = "blue") +
   facet_grid(~ Site) 
@@ -511,7 +505,35 @@ df_summary_chirps <-
                  intervals = custom)
 ```
 
-I am stopping here!
 
-There is also codes to get historical summary intervals in the "code_agromet_R.rmd". I don't think we need it. 
+
+# Historical
+
+## Daymet 
+```{r}
+#dpp default = 0 - dpp = days prior start date
+
+df_daymet_historical <- weather_daymet(input = df_site, dpp = 0) 
+```
+## NASA power
+
+```{r}
+#dpp default = 0 - dpp = days prior start date
+
+df_nasapower_historical <- weather_nasapower(input = df_site, dpp = 0)
+```
+
+
+## Chirps
+
+```{r}
+# Specify Days prior planting. Default is dpp = 0
+# Lots of NA values - did not get this function well
+df_chirps_historical <- weather_chirps(input = df_site, dpp = 0)  
+```
+
+
+There are more codes in the "code_agromet_R.Rmd" to get historical intervals but I think you can get what you want using tidyverse functions (summarise, filter, mutate) from the histotical data set.
+
+
 
