@@ -22,7 +22,7 @@ libraries('vegan') # Shannon Diversity Index
 # Coordinates of each site (site names must be unique)
 # Each site is a row
 # Date for each site in columns
-df.site <- data.frame(ID = c('1','2','3'),
+df.site <- tibble(ID = c('1','2','3'), # use tibble instead data.frame (same output - tibble better)
                       Crop = c('Corn/Soy','Corn/Soy','Corn/Soy'),
                       Site = c('Arlington','Lancaster','Rock County'),
                       # Both coordinates in decimal format
@@ -31,7 +31,7 @@ df.site <- data.frame(ID = c('1','2','3'),
 
 # Specify key dates. Typically, dates relate to phenological stages
 # Each date must be a column
-df.time <- data.frame(ID = c('1','2','3'),
+df.time <- tibble(ID = c('1','2','3'),
                       # Dates as YYYY_MM_DD, using "_" to separate
                       Start = c('1988_01_01','1988_01_01','1988_01_01'),
                       #Flo = c('2002_07_15','2006_04_15','2010_07_05'),
@@ -39,7 +39,7 @@ df.time <- data.frame(ID = c('1','2','3'),
                       End = c('2018_12_31','2018_12_31','2018_12_31'))
 
 # For historical data
-df.historical <- data.frame(ID = c('1','2','3'),
+df.historical <- tibble(ID = c('1','2','3'),
                       # Dates as YYYY_MM_DD, using "_" to separate
                       Start = c('1988_01_01','1988_01_01','1988_01_01'),
                       End = c('2018_12_31','2018_12_31','2018_12_31'))
@@ -110,7 +110,6 @@ kable(df.historical) %>%
 Gsc = 0.0820 # (MJ m-2 min-1)
 # Radiation adjustment coefficient (Samani, 2004)
 kRs = 0.17
-
 ```
 
 ## DAYMET function
@@ -256,6 +255,3 @@ arlington_tavg= arlington %>%
 ```
 Probably would have worked but Couldn't figure out how to get months assigned with only "day of year". Ultimately was trying to develop monthly normal data.
 
-```{r}
-
-```
