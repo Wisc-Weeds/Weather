@@ -23,13 +23,12 @@ This code was generated using R version 4.0.3 (Linux-GNU, 64-bit) and R-studio v
 ## Loading packages
 
 ```{r}
-library(easypackages)
-libraries('tidyverse') # Data wrangling
-libraries('lubridate') # Dates operations
-libraries('kableExtra') # Table formatting
-libraries('daymetr','chirps','nasapower') # Weather databases
-libraries('vegan') # Shannon Diversity Index
-
+library(tidyverse) # Data wrangling
+library(lubridate) # Dates operations
+library(daymetr)
+library(chirps)
+library(nasapower)
+library(vegan) # Shannon Diversity Index
 ```
 
 ## Input example
