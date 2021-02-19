@@ -24,14 +24,14 @@ I am not sure what you looking for. This analysis here gets the averaged monthly
 
 ```{r}
 # your data
-df_site <- tibble(ID = c('1','2','3'), 
-                      Crop = c('Corn/Soy','Corn/Soy','Corn/Soy'),
-                      Site = c('Arlington','Lancaster','Rock County'),
+df_site <- tibble(ID = c('1','2','3','4'), 
+                      Crop = c('Corn/Soy','Corn/Soy','Corn/Soy','Corn/Soy'),
+                      Site = c('Arlington','Lancaster','Rock County','Obriens'),
                       # Both coordinates in decimal format
-                      latitude = c( 43.3091,42.8283,42.7255),
-                      longitude = c(-89.3473,-90.7908,-89.0228),
-                      Start = c('1988-01-01','1988-01-01','1988-01-01'),
-                      End = c('2020-12-31','2020-12-31','2020-12-31'))
+                      latitude = c( 43.3091,42.8283,42.7255,42.8771),
+                      longitude = c(-89.3473,-90.7908,-89.0228,-89.3971),
+                      Start = c('1988-01-01','1988-01-01','1988-01-01','1988-01-01'),
+                      End = c('2020-12-31','2020-12-31','2020-12-31','2020-12-31'))
 
 df_site <- df_site %>% 
   mutate_at(6:7, ymd) # as date
@@ -129,7 +129,7 @@ df_daymet <- weather_daymet(input = df_site, dpp = 0)
 Here I did some data manipulation to get averages by months. 
 
 ```{r}
-df_daymet %>% 
+Monthly_Site= df_daymet %>% 
   group_by(Crop, Site, Month) %>% 
   summarise(Tmax = mean(Tmax), 
             Tmin = mean(Tmin), 
@@ -138,5 +138,11 @@ df_daymet %>%
             SWE = mean(SWE))
 ```
 
+```{r}
+  
+write.csv(Monthly_Site, "NormalWeather_WiscWeeds.csv", row.names = FALSE) 
+
+
+```
 
 
