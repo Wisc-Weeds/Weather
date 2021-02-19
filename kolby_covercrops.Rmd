@@ -134,7 +134,7 @@ Monthly_Site= df_daymet %>%
   summarise(Tmax = mean(Tmax), 
             Tmin = mean(Tmin), 
             Tmean = mean(Tmean),
-            PP = mean(PP),
+            PP = sum(PP)/30, #monthly sum of precipitation
             SWE = mean(SWE))
 ```
 
