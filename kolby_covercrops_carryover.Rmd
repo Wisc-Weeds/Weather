@@ -1,7 +1,7 @@
 ---
-title: "30 Year Normal Weather"
+title: "Untitled"
 author: "Kolby Grint"
-date: "2/16/2021"
+date: "3/30/2021"
 output: pdf_document
 ---
 
@@ -24,10 +24,10 @@ libraries('vegan') # Shannon Diversity Index
 # Date for each site in columns
 df.site <- tibble(ID = c('1','2','3'), # use tibble instead data.frame (same output - tibble better)
                       Crop = c('Corn/Soy','Corn/Soy','Corn/Soy'),
-                      Site = c('Arlington','Lancaster','Rock County'),
+                      Site = c('Arlington','Havelock','Lancaster'),
                       # Both coordinates in decimal format
-                      latitude = c( 43.3091,42.8283,42.7255),
-                      longitude = c(-89.3473,-90.7908,-89.0228))
+                      latitude = c( 43.3091,40.8553,42.8283),
+                      longitude = c(-89.3473,-96.6158,-90.7908))
 
 # Specify key dates. Typically, dates relate to phenological stages
 # Each date must be a column
@@ -197,60 +197,25 @@ weather.daymet(input = df.input, dpp = 0) -> df.weather.daymet
 
 #View(df.weather.daymet)
 ```
-I think the weather data starts one month early? Filtered it out.
 
-### Kolby's Wrangling of Daymet Data
-```{r Wrangling Daymet Data}
-df.weather.daymet %>%
-  filter(!Year == "1987")
 
-arlweather <- df.weather.daymet %>%
-  filter(Site == "Arlington") 
+```{r}
+Monthly_Site= df.weather.daymet %>% 
+  group_by(Crop, Site, Month) %>% 
+  summarise(Tmax = mean(Tmax), 
+            Tmin = mean(Tmin), 
+            Tmean = mean(Tmean),
+            PP = sum(PP)/30, #monthly sum of precipitation
+            SWE = mean(SWE))
+```
+
+```{r}
   
+write.csv(Monthly_Site, "NormalWeather_Carryover.csv", row.names = FALSE) 
 
-#average monthly precipitation and temperature
-arlweather_monthly <- arlweather %>%
-  group_by(Month) %>%
-  summarise(prcp_mm0 = sum(PP)/30 , temp_C = mean(Tmean))
+
 ```
 
 
 
-
-### Kolby's Solo Attempt Ignore for now and probably delete.
-```{r data}
-arlington<-download_daymet(site= "arlington",
-                lat = 43.3091, #The N-S latitude value
-                lon = -89.3473, #The E-W longitude value
-                start = 1988,#Start of the range of years
-                end = 2018,#end of the range of years
-                path = ,#Path for where to save the data; default is NULL
-                internal = TRUE,
-                simplify = TRUE)
-
-str(arlington)
-```
-
-
-```{r data wrangling}
-arlington_prcp= arlington %>%
-  select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "prcp..mm.day.") #%>%
-  ##mutate(month)
-
-arlington_tmax= arlington %>%
-  select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "tmax..deg.c.") %>%
-  rename( c("tmax" = "measurement", "tmaxc" = "value"))
- 
-
-arlington_tavg= arlington %>%
-  select(site, tile, year, yday, measurement, value) %>%
-  filter(measurement == "tmin..deg.c.") %>%
-  left_join(arlington_tmax, by = c("site", "tile", "year", "yday")) %>%
-  mutate(tmean = (value + tmaxc)/2)
-
-#Probably would have worked but Couldn't 
-```
-Probably would have worked but Couldn't figure out how to get months assigned with only "day of year". Ultimately was trying to develop monthly normal data.
 
