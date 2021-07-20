@@ -146,6 +146,9 @@ weather_daymet <- function(input, dpp = 0){
 df_daymet <- weather_daymet(input = df_time, dpp = 0) 
 ```
 
+
+
+
 ```{r}
 #df_daymet is ready - you have a full data set with weather data from the past 30-y
 # There are many ways you can retrieve the data from it. Below just an simple plot
